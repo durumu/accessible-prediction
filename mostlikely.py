@@ -66,12 +66,11 @@ def update_user_counts(history):
 
 
 def predictions(history):
-    while True:
-        lookback = min(MAX_LOOKBACK, len(history))
+    lookback = min(MAX_LOOKBACK, len(history))
 
-        recent = ''.join(history[-lookback:])
-        update_user_counts(history)
-        return next_by_priority(recent)
+    recent = ''.join(history[-lookback:])
+    update_user_counts(history)
+    return next_by_priority(recent)
 
 
 initialize_wiki_counts()
