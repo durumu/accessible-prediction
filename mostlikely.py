@@ -1,7 +1,11 @@
 from collections import defaultdict
 from string import ascii_lowercase
 
-counts = defaultdict(lambda: [0]*27)
+MAX_LOOKBACK = 4
+LEARN_RATE = 0.05
+
+wiki_counts = defaultdict(lambda: [0]*27)
+user_counts = defaultdict(lambda: [0]*27)
 
 def index(letter):
     if letter.isalpha():
@@ -9,35 +13,53 @@ def index(letter):
     else:
         return 26
 
-def priority(prefix):
+
+def priority(prediction, next_letter):
+    wiki_count = wiki_counts[prediction][index(next_letter)]
+    user_count = user_counts[prediction][index(next_letter)]
+    return max(wiki_count, 1) * (1 + LEARN_RATE * user_count**1.5)
+
+
+def next_by_priority(prefix):
+    if len(prefix) > MAX_LOOKBACK:
+        prefix = prefix[-MAX_LOOKBACK:]
+
     letters = ascii_lowercase + '_'
-    sort_key = {}
-    for letter in letters:
-        sort_key[letter] = []
-        for start in range(0, len(prefix)):
-            sort_key[letter].append(counts[prefix[start:]][index(letter)])
+    def sort_key(letter):
+        return [priority(prefix[start:], letter) for start in range(len(prefix))]
     
-    sorted_letters = sorted(letters, key = lambda letter : sort_key[letter])
-    return sorted_letters[::-1] # reversed
+    return sorted(letters, key = sort_key, reverse = True)
 
 
-def main():
+def initialize_wiki_counts():
     with open('freqs.dat') as f:
         for line in f:
             word, count = line.split('|')
             count = int(count) # we do nothing with count right now
             prefix, next_letter = word[:-1], word[-1]
-            counts[prefix][index(next_letter)] = count
+            wiki_counts[prefix][index(next_letter)] = count
 
-    MAX_LOOKBACK = 4
+def update_user_counts(history):
+    for lookback in range(1, MAX_LOOKBACK):
+        prefix = ''.join(history[-lookback-1:-1])
+        user_counts[prefix][index(history[-1])] += 1
+
+def main():
+    initialize_wiki_counts()
+
     history = [' ']
 
     while True:
         lookback = min(MAX_LOOKBACK, len(history))
+
         recent = ''.join(history[-lookback:])
-        print(''.join(priority(recent)))
-        c = input()[0]
-        history.append(c)
+        print(''.join(next_by_priority(recent)))
+
+        inputted_character = input()[0]
+        history.append(inputted_character)
+        
+        update_user_counts(history)
+
 
 if __name__ == "__main__":
     main()
