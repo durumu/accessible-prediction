@@ -9,7 +9,12 @@ ALPH_SIZE = 27
 FREQUENCY_FILEPATH = 'freqs.dat'
 
 LONG_DELAY = 1500  # delay for first 3 letters
+MAX_L_DELAY = 10000  # max and min long delay
+MIN_L_DELAY = 200
 SHORT_DELAY = 1000  # delay for all other letters
+MAX_S_DELAY = MAX_L_DELAY - LONG_DELAY + SHORT_DELAY  # max and min short delay are always the same distance from long delay
+MIN_S_DELAY = MIN_L_DELAY - LONG_DELAY + SHORT_DELAY
+DELAY_MOD = 100  # how much to adjust the delay by
 
 
 def index(letter):
@@ -84,11 +89,11 @@ class Application(tk.Frame):
         if character_selected == '_':
             character_selected = ' '
 
+        self.arrow_pressed = False
+        self.uppercase = False
         self.add_typed_character(character_selected)
         self.predictor.add_character(character_selected)
         self.reset_cursor()
-        self.arrow_pressed = False
-        self.uppercase = False
 
     def backspace(self, event):
         self.add_typed_character("\b")
@@ -105,6 +110,16 @@ class Application(tk.Frame):
     def shift(self, event):
         self.uppercase = not self.uppercase
         self.refresh_labels()
+
+    def up(self, event):
+        global LONG_DELAY, SHORT_DELAY, DELAY_MOD, MAX_L_DELAY, MAX_S_DELAY
+        LONG_DELAY = min(MAX_L_DELAY, LONG_DELAY + DELAY_MOD)
+        SHORT_DELAY = min(MAX_S_DELAY, SHORT_DELAY + DELAY_MOD)
+
+    def down(self, event):
+        global LONG_DELAY, SHORT_DELAY, DELAY_MOD, MIN_L_DELAY, MIN_S_DELAY
+        LONG_DELAY = max(MIN_L_DELAY, LONG_DELAY - DELAY_MOD)
+        SHORT_DELAY = max(MIN_S_DELAY, SHORT_DELAY - DELAY_MOD)
 
     def add_typed_character(self, character):
         self.typed_text.configure(state="normal")
@@ -194,6 +209,8 @@ def main():
     root.bind("<BackSpace>", app.backspace)
     root.bind("<Left>", app.left)
     root.bind("<Right>", app.right)
+    root.bind("<Up>", app.up)
+    root.bind("<Down>", app.down)
     root.bind("<Shift_L>", app.shift)
     app.mainloop()
 
