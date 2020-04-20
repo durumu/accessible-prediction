@@ -8,8 +8,8 @@ LEARN_RATE = 0.05
 ALPH_SIZE = 27
 FREQUENCY_FILEPATH = 'freqs.dat'
 
-LONG_DELAY = 1500
-SHORT_DELAY = 1000
+LONG_DELAY = 1500  # delay for first 3 letters
+SHORT_DELAY = 1000  # delay for all other letters
 
 
 def index(letter):
@@ -73,6 +73,8 @@ class Application(tk.Frame):
 
         self.create_widgets()
 
+        self.arrow_pressed = False
+
         self.master.after(LONG_DELAY, self.loop)
 
     def select_character(self, event):
@@ -84,10 +86,19 @@ class Application(tk.Frame):
         self.add_typed_character(character_selected)
         self.predictor.add_character(character_selected)
         self.reset_cursor()
+        self.arrow_pressed = False
 
     def backspace(self, event):
         self.add_typed_character("\b")
         self.reset_cursor()
+
+    def left(self, event):
+        self.arrow_pressed = True
+        self.revert_cursor()
+
+    def right(self, event):
+        self.arrow_pressed = True
+        self.advance_cursor()
 
     def add_typed_character(self, character):
         self.typed_text.configure(state="normal")
@@ -109,8 +120,15 @@ class Application(tk.Frame):
             self.reset_cursor()
         self.refresh_labels()
 
+    def revert_cursor(self):
+        self.cursor_position -= 1
+        if self.cursor_position < 0:
+            self.cursor_position = ALPH_SIZE - 1
+        self.refresh_labels()
+
     def loop(self):
-        self.advance_cursor()
+        if not self.arrow_pressed:
+            self.advance_cursor()
 
         delay = LONG_DELAY if self.cursor_position <= 3 else SHORT_DELAY
         self.master.after(delay, self.loop)
@@ -156,12 +174,15 @@ class Application(tk.Frame):
 
         self.refresh_labels()
 
+
 def main():
     root = tk.Tk()
     root.title("Text Prediction Prototype")
     app = Application(master=root)
     root.bind("<space>", app.select_character)
     root.bind("<BackSpace>", app.backspace)
+    root.bind("<Left>", app.left)
+    root.bind("<Right>", app.right)
     app.mainloop()
 
 
