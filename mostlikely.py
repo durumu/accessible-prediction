@@ -71,9 +71,10 @@ class Application(tk.Frame):
 
         self.cursor_position = 0
 
-        self.create_widgets()
-
         self.arrow_pressed = False
+        self.uppercase = False
+
+        self.create_widgets()
 
         self.master.after(LONG_DELAY, self.loop)
 
@@ -87,6 +88,7 @@ class Application(tk.Frame):
         self.predictor.add_character(character_selected)
         self.reset_cursor()
         self.arrow_pressed = False
+        self.uppercase = False
 
     def backspace(self, event):
         self.add_typed_character("\b")
@@ -100,14 +102,20 @@ class Application(tk.Frame):
         self.arrow_pressed = True
         self.advance_cursor()
 
+    def shift(self, event):
+        self.uppercase = not self.uppercase
+        self.refresh_labels()
+
     def add_typed_character(self, character):
         self.typed_text.configure(state="normal")
-        if character != "\b":
-            self.typed_text.insert("end-2c", character)
-        else:
+        if self.uppercase:
+            character = character.upper()
+        if character == "\b":
             self.typed_text.delete("end-2c")
             self.typed_text.delete("end-2c")
             self.typed_text.insert("end", "|")
+        else:
+            self.typed_text.insert("end-2c", character)
         self.typed_text.configure(state="disabled")
 
     def reset_cursor(self):
@@ -135,7 +143,10 @@ class Application(tk.Frame):
 
     def refresh_labels(self):
         priority = self.predictor.next_by_priority()
-        self.order_label_text.set(''.join(priority))
+        if self.uppercase:
+            self.order_label_text.set(''.join(priority).upper())
+        else:
+            self.order_label_text.set(''.join(priority))
 
         cursor_text = [' '] * 27
         cursor_text[max(0, self.cursor_position)] = '^'
@@ -183,6 +194,7 @@ def main():
     root.bind("<BackSpace>", app.backspace)
     root.bind("<Left>", app.left)
     root.bind("<Right>", app.right)
+    root.bind("<Shift_L>", app.shift)
     app.mainloop()
 
 
