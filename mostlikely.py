@@ -158,6 +158,7 @@ class Application(tk.Frame):
 
         self.refresh_labels()
 
+<<<<<<< HEAD
 
 def main():
     root = tk.Tk()
@@ -165,6 +166,14 @@ def main():
     app = Application(master = root)
     root.bind("<space>", app.select_character)
     app.mainloop()
+=======
+def predictions(history):
+    lookback = min(MAX_LOOKBACK, len(history))
+
+    recent = ''.join(history[-lookback:])
+    update_user_counts(history)
+    return next_by_priority(recent)
+>>>>>>> 30c7bf0ce45658afa00bf2fced0763f3eef602e5
 
 
 if __name__ == "__main__":
