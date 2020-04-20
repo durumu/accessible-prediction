@@ -90,8 +90,8 @@ class Application(tk.Frame):
             character_selected = ' '
 
         self.arrow_pressed = False
-        self.uppercase = False
         self.add_typed_character(character_selected)
+        self.uppercase = False
         self.predictor.add_character(character_selected)
         self.reset_cursor()
 
