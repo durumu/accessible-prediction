@@ -8,8 +8,8 @@ LEARN_RATE = 0.05
 ALPH_SIZE = 27
 FREQUENCY_FILEPATH = 'freqs.dat'
 
-LONG_DELAY = 1000
-SHORT_DELAY = 800
+LONG_DELAY = 1500
+SHORT_DELAY = 1000
 
 
 def index(letter):
@@ -17,9 +17,9 @@ def index(letter):
         return ord(letter.lower()) - ord('a')
     else:
         return ALPH_SIZE - 1
-    
 
-def initialize_wiki_counts(filepath = FREQUENCY_FILEPATH):
+
+def initialize_wiki_counts(filepath=FREQUENCY_FILEPATH):
     wiki_counts = defaultdict(lambda: [0] * ALPH_SIZE)
     with open(filepath) as f:
         for line in f:
@@ -31,25 +31,22 @@ def initialize_wiki_counts(filepath = FREQUENCY_FILEPATH):
 
 
 class LetterPredictor:
-    def __init__(self, max_lookback = MAX_LOOKBACK):
+    def __init__(self, max_lookback=MAX_LOOKBACK):
         self.max_lookback = min(max_lookback, MAX_LOOKBACK)
         self.wiki_counts = initialize_wiki_counts()
         self.user_counts = defaultdict(lambda: [0] * ALPH_SIZE)
         self.history = [' ']
-
 
     def priority(self, prediction, next_letter):
         wiki_count = self.wiki_counts[prediction][index(next_letter)]
         user_count = self.user_counts[prediction][index(next_letter)]
         return max(wiki_count, 1) * (1 + LEARN_RATE * user_count ** 1.5)
 
-
     def update_user_counts(self):
         for lookback in range(1, self.max_lookback):
             prefix = ''.join(self.history[-lookback - 1:-1])
             self.user_counts[prefix][index(self.history[-1])] += 1
 
-    
     def next_by_priority(self):
         lookback = min(self.max_lookback, len(self.history))
         prefix = ''.join(self.history[-lookback:])
@@ -60,14 +57,13 @@ class LetterPredictor:
         letters = ascii_lowercase + '_'
         return sorted(letters, key=sort_key, reverse=True)
 
-
     def add_character(self, character):
         self.history.append(character)
         self.update_user_counts()
 
 
 class Application(tk.Frame):
-    def __init__(self, master = None):
+    def __init__(self, master=None):
         super().__init__(master)
         self.master = master
         self.pack()
@@ -79,28 +75,33 @@ class Application(tk.Frame):
 
         self.master.after(LONG_DELAY, self.loop)
 
-
     def select_character(self, event):
         priority = self.predictor.next_by_priority()
         character_selected = priority[max(self.cursor_position, 0)]
         if character_selected == '_':
             character_selected = ' '
-        
+
         self.add_typed_character(character_selected)
         self.predictor.add_character(character_selected)
         self.reset_cursor()
 
+    def backspace(self, event):
+        self.add_typed_character("\b")
+        self.reset_cursor()
 
     def add_typed_character(self, character):
-        self.typed_text.configure(state = "normal")
-        self.typed_text.insert("end-2c", character)
-        self.typed_text.configure(state = "disabled")
-
+        self.typed_text.configure(state="normal")
+        if character != "\b":
+            self.typed_text.insert("end-2c", character)
+        else:
+            self.typed_text.delete("end-2c")
+            self.typed_text.delete("end-2c")
+            self.typed_text.insert("end", "|")
+        self.typed_text.configure(state="disabled")
 
     def reset_cursor(self):
         self.cursor_position = -1
         self.refresh_labels()
-
 
     def advance_cursor(self):
         self.cursor_position += 1
@@ -108,13 +109,11 @@ class Application(tk.Frame):
             self.reset_cursor()
         self.refresh_labels()
 
-
     def loop(self):
         self.advance_cursor()
 
         delay = LONG_DELAY if self.cursor_position <= 3 else SHORT_DELAY
         self.master.after(delay, self.loop)
-
 
     def refresh_labels(self):
         priority = self.predictor.next_by_priority()
@@ -124,57 +123,54 @@ class Application(tk.Frame):
         cursor_text[max(0, self.cursor_position)] = '^'
         self.cursor_label_text.set(''.join(cursor_text))
 
-
     def create_widgets(self):
         self.order_label_text = tk.StringVar()
         self.order_label = tk.Label(
             self.master,
-            textvariable = self.order_label_text,
-            font = ('Courier', 36),
+            textvariable=self.order_label_text,
+            font=('Courier', 36),
         )
-        self.order_label.pack(side = "top")
+        self.order_label.pack(side="top")
 
         self.cursor_label_text = tk.StringVar()
         self.cursor_label = tk.Label(
             self.master,
-            textvariable = self.cursor_label_text,
-            font = ('Courier', 36),
+            textvariable=self.cursor_label_text,
+            font=('Courier', 36),
         )
-        self.cursor_label.pack(side = "top")
+        self.cursor_label.pack(side="top")
 
         self.typed_text = tk.Text(
             self.master,
-            font = ('Courier', 24),
-            height = 6,
-            width = 40,
-            wrap = tk.WORD,
+            font=('Courier', 24),
+            height=6,
+            width=40,
+            wrap=tk.WORD,
         )
-        self.typed_text.pack(side = "top")
+        self.typed_text.pack(side="top")
 
         self.typed_text.insert(tk.END, "|")
-        self.typed_text.configure(state = "disabled")
+        self.typed_text.configure(state="disabled")
         selectbackground = self.typed_text.cget("selectbackground")
-        self.typed_text.configure(inactiveselectbackground = selectbackground)
+        self.typed_text.configure(inactiveselectbackground=selectbackground)
 
         self.refresh_labels()
-
-<<<<<<< HEAD
 
 def main():
     root = tk.Tk()
     root.title("Text Prediction Prototype")
-    app = Application(master = root)
+    app = Application(master=root)
     root.bind("<space>", app.select_character)
+    root.bind("<BackSpace>", app.backspace)
     app.mainloop()
-=======
-def predictions(history):
+
+
+"""def predictions(history):
     lookback = min(MAX_LOOKBACK, len(history))
 
     recent = ''.join(history[-lookback:])
     update_user_counts(history)
-    return next_by_priority(recent)
->>>>>>> 30c7bf0ce45658afa00bf2fced0763f3eef602e5
-
+    return next_by_priority(recent)"""
 
 if __name__ == "__main__":
     main()
